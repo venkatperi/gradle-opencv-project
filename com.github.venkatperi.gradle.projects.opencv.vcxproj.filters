@@ -1,0 +1,24 @@
+<Project ToolsVersion='4.0' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>
+  <ItemGroup>
+    <Filter Include='src'>
+      <UniqueIdentifier>{6e74a10b-252e-4f41-aad7-f9ee2a9747ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include='src\main'>
+      <UniqueIdentifier>{d4ed34ec-d094-426b-957a-ad35ca3e52af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include='src\main\cpp'>
+      <UniqueIdentifier>{bc296b3d-5ade-45eb-bfe4-c283cfb02bdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include='src\main\groovy'>
+      <UniqueIdentifier>{d5cec410-a658-44d7-b089-fc4d30450303}</UniqueIdentifier>
+    </Filter>
+    <Filter Include='src\main\res'>
+      <UniqueIdentifier>{22d0c963-dae8-4486-b483-ee4a8ae396d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include='src\main\test'>
+      <UniqueIdentifier>{666fc1d4-19ee-476d-80b8-253baddecade}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup />
+  <ItemGroup />

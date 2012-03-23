@@ -1,0 +1,177 @@
+//
+//  Copyright (c) 2012 RemoteReality Corporation. All Rights Reserved. 
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//  http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+//  Author(s): Venkat Peri. RemoteReality Corporation.
+//
+
+
+apply plugin: 'maven'
+
+
+fullVersion = version + "-SNAPSHOT"
+
+fileBase = 'OpenCV-' + version + '-win-superpack'
+filename = fileBase + '.exe'
+artifactId = "opencv-win-superpack"
+
+tmpDir = "$buildDir/tmp"
+srcDir = "$buildDir/src"
+outDir = "$tmpDir/car"
+cacheDir = './.cache'
+td = file(tmpDir)
+sd = file(srcDir)
+od = file(outDir)
+cd = file(cacheDir)
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 1, 'minutes'
+}
+
+configurations {
+    compile
+    release
+}
+
+buildscript {
+    dependencies {
+        classpath group: 'com.github.venkatperi.gradle.plugins', name: 'MSBuildPlugin', version: '1.0-SNAPSHOT'
+        classpath group: 'com.github.venkatperi.gradle.plugins', name: 'CarPlugin', version: '1.0-SNAPSHOT'
+    }
+
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 1, 'minutes'
+    }
+
+    repositories {
+        mavenRepo name: 'snapshots', 
+                url: project[repo + '_repo_snapshots_url']
+        mavenRepo name: 'releases', 
+                url: project[repo + '_repo_releases_url']
+        mavenRepo name: 'public', 
+            url: project[repo + '_repo_public_url']
+    }
+}
+
+apply plugin: 'car'
+apply plugin: 'msbuild'
+
+task vcxproj(overwrite: true) << {
+}
+
+task compile(overwrite: true) << {
+}
+
+task stage(overwrite: true, dependsOn:'buildit') << {
+}
+
+task resources {
+    outputs.files td, sd, od
+    doLast {
+        td.mkdirs()
+        sd.mkdirs()
+        od.mkdirs()
+        cd.mkdirs()
+    }
+}
+
+task download(dependsOn: 'resources') << {
+    if (!new File(cacheDir + '/' + filename).exists()) {
+        println "Downloading sources..."
+        ant.get(src: 'http://iweb.dl.sourceforge.net/project/opencvlibrary/opencv-win/' + version +
+                '/OpenCV-' + version + '-win-superpack.exe',
+                dest: cacheDir + '/' + filename, verbose: "true")
+    }
+    else {
+        println "Found sources in cache..."
+    }
+}
+
+task uncomp(type:Exec, dependsOn: 'download')  {
+    println filename
+    workingDir '.cache'
+    commandLine '.cache/'+filename, '-y'
+}
+uncomp.inputs.files '.cache/' + filename 
+uncomp.outputs.dir '.cache/opencv'
+
+task extract(type:Copy, dependsOn: 'uncomp')  {
+    from '.cache/opencv'
+    into srcDir
+}
+
+task buildit(dependsOn:'extract') << {
+	def l = project.type == 'lib' ? 'staticLib' : 'lib'
+    def libDir = srcDir + ['build', project.arch, project.compiler, l].sum { '/' + it }
+    println "Getting libraries from: " + libDir
+	
+    copy {
+        from libDir
+        into 'build/tmp/car/lib'
+        eachFile {println it.getRelativePath() }
+    }
+
+    copy {
+        from "$srcDir/build/include"
+        into 'build/tmp/car/include'
+        eachFile {println it.getRelativePath() }
+    }
+	
+    copy {
+        from "$srcDir/build/common"
+        into 'build/tmp/car/lib/common'
+        eachFile {println it.getRelativePath() }
+    }
+}
+
+buildit.outputs.dir 'build/tmp/car'
+
+car {
+    manifest {
+        attributes(
+                "dirs": ['include'],
+                "cxxflags": ['/Gz'],
+                'compile'
+        )
+
+        attributes(
+                "dirs": ['lib'],
+                "flags": [],
+                'libs': [],
+                'link'
+        )
+
+        attributes(
+                'files': [],
+                'runtime'
+        )
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: project[repo + '_repo_releases_url']) {
+                authentication(userName: 
+                    project[repo + '_repo_releases_username'], 
+                    password: project[repo + '_repo_releases_password'])
+                releases()
+            }
+        }
+    }
+}
+
+
+task wrapper(type: Wrapper) {
+}
